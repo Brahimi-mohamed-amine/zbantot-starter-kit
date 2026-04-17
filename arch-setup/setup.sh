@@ -6,11 +6,11 @@
 # ==============================================================================
 
 # --- YOUR GITHUB URLS ---
-DOTFILES_REPO="https://github.com/YOUR_USERNAME/YOUR_DOTFILES_REPO.git"
-DWM_REPO="https://github.com/YOUR_USERNAME/YOUR_DWM_REPO.git"
-ST_REPO="https://github.com/YOUR_USERNAME/YOUR_ST_REPO.git"
-DMENU_REPO="https://github.com/YOUR_USERNAME/YOUR_DMENU_REPO.git"
-DWMBLOCKS_REPO="https://github.com/YOUR_USERNAME/YOUR_DWMBLOCKS_REPO.git"
+SRC_REPO="https://github.com/YOUR_USERNAME/YOUR_DOTFILES_REPO.git"
+#DWM_REPO="https://github.com/YOUR_USERNAME/YOUR_DWM_REPO.git"
+#ST_REPO="https://github.com/YOUR_USERNAME/YOUR_ST_REPO.git"
+#DMENU_REPO="https://github.com/YOUR_USERNAME/YOUR_DMENU_REPO.git"
+#DWMBLOCKS_REPO="https://github.com/YOUR_USERNAME/YOUR_DWMBLOCKS_REPO.git"
 
 # ==============================================================================
 # PHASE 1: INITIALIZATION & SYSTEM UPDATE
@@ -54,6 +54,7 @@ yay -S --needed --noconfirm - < aur_packages.txt
 # ==============================================================================
 echo "[+] Creating standard directories..."
 # mkdir -p creates the directory, and its parents if needed. It won't error if it exists.
+#mkdir -p ~/src
 mkdir -p ~/.config
 mkdir -p ~/Documents
 mkdir -p ~/Downloads
@@ -66,14 +67,14 @@ mkdir -p ~/scripts
 # ==============================================================================
 echo "[+] Downloading and applying dotfiles..."
 # Clone dotfiles to a temporary folder
-git clone "$DOTFILES_REPO" /tmp/my-dotfiles
+git clone "$SRC_REPO" ~/src
 
 # Copy the contents into your home directory (Example: copying to ~/.config)
 # Adjust these paths based on how your dotfiles repo is structured!
-cp -r /tmp/my-dotfiles/* ~/.config/
+cp -r ~/src/dotfiles/* ~/.config/
 
 # Clean up the temp dotfiles folder
-rm -rf /tmp/my-dotfiles
+#rm -rf /tmp/my-dotfiles
 
 # ==============================================================================
 # PHASE 7: SUCKLESS COMPILATION (dwm, st, dmenu, dwmblocks)
@@ -81,24 +82,24 @@ rm -rf /tmp/my-dotfiles
 echo "[+] Compiling suckless tools..."
 
 # Build dwm
-git clone "$DWM_REPO" ~/suckless/dwm
-cd ~/suckless/dwm
-sudo make clean install
+#git clone "$DWM_REPO" ~/src/suckless/dwm
+cd ~/src/suckless/dwm
+sudo make install clean
 
 # Build st
-git clone "$ST_REPO" ~/suckless/st
-cd ~/suckless/st
-sudo make clean install
+#git clone "$ST_REPO" ~/src/suckless/st
+cd ~/src/suckless/st
+sudo make install clean
 
 # Build dmenu
-git clone "$DMENU_REPO" ~/suckless/dmenu
-cd ~/suckless/dmenu
-sudo make clean install
+#git clone "$DMENU_REPO" ~/suckless/dmenu
+cd ~/src/suckless/dmenu
+sudo make install clean
 
 # Build dwmblocks
-git clone "$DWMBLOCKS_REPO" ~/suckless/dwmblocks
-cd ~/suckless/dwmblocks
-sudo make clean install
+#git clone "$DWMBLOCKS_REPO" ~/suckless/dwmblocks
+cd ~/src/suckless/dwmblocks
+sudo make install clean
 
 # Go back to home directory
 cd ~
@@ -122,19 +123,12 @@ echo "export EDITOR=nvim" >> ~/.bashrc
 # Use "Heredocs" (cat << 'EOF' > file). Everything between the EOFs goes in the file.
 # Example: Creating an .xinitrc to start dwm when you type 'startx'
 cat << 'EOF' > ~/.xinitrc
-#!/bin/sh
-# Start dwmblocks in the background
+setxkbmap -layout us,ara -variant -option grp:alts_toggle caps:swapescape &
+sxhkd &
 dwmblocks &
-
-# Start compositor (uncomment if you use picom)
-# picom &
-
-# Start your window manager
-exec dwm
+dwm 
 EOF
 
-# Make sure .xinitrc is executable
-chmod +x ~/.xinitrc
 
 # --- 4. DELETE UNWANTED FILES OR DIRECTORIES ---
 # Use rm -rf to forcefully remove things. BE VERY CAREFUL WITH THIS.
@@ -146,7 +140,7 @@ chmod +x ~/.xinitrc
 # ==============================================================================
 echo "[+] Enabling system services..."
 # Enable NetworkManager to start on boot
-sudo systemctl enable --now NetworkManager
+#sudo systemctl enable --now NetworkManager
 
 echo "[================================================================]"
 echo "[+] SETUP COMPLETE! Please double-check for errors, then reboot."
