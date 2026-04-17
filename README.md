@@ -86,7 +86,6 @@ List of packages to install. The script tries pacman first, then skips if not fo
 Configuration files that will be deployed to your home directory. The directory structure mirrors your home directory:
 
 - `configs/.bashrc` → deployed to `~/.bashrc`
-- `configs/doas.conf` → special handling (see below)
 
 ## Backups
 

@@ -248,6 +248,13 @@ deploy_configs() {
     while IFS= read -r config_file; do
         # Get relative path from configs directory
         local relative_path="${config_file#$configs_dir/}"
+        
+        # Skip doas.conf - it's handled separately by configure_doas
+        if [[ "$relative_path" == "doas.conf" ]]; then
+            print_info "Skipping: doas.conf (handled separately)"
+            continue
+        fi
+        
         local target_path="$HOME/$relative_path"
         local target_dir=$(dirname "$target_path")
         
