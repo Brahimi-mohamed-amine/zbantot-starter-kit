@@ -22,6 +22,13 @@ LOG_FILE="$BACKUP_PATH/setup.log"
 # Username (for doas config)
 USERNAME=$(whoami)
 
+# Determine if we need sudo or not
+if [[ $EUID -eq 0 ]]; then
+    SUDO=""
+else
+    SUDO="sudo"
+fi
+
 ################################
 # Helper Functions
 ################################
@@ -102,25 +109,10 @@ setup_backups() {
 # System Update
 ################################
 
-cleanup_pacman_lock() {
-    print_section "CLEANUP" "Checking for pacman lock..."
-    
-    if [[ -f /var/lib/pacman/db.lck ]]; then
-        print_info "Found pacman lock, removing it..."
-        sudo rm -f /var/lib/pacman/db.lck
-        print_success "Pacman lock removed"
-        log "Removed pacman lock file"
-    else
-        print_success "No pacman lock found"
-    fi
-    
-    echo ""
-}
-
 update_system() {
     print_section "UPDATE" "Updating pacman database..."
     
-    if sudo pacman -Syu --noconfirm; then
+    if $SUDO pacman -Syu --noconfirm; then
         print_success "System updated"
         log "pacman -Syu completed successfully"
     else
@@ -156,10 +148,10 @@ install_packages() {
         
         print_info "Installing: $package"
         
-        if sudo pacman -S "$package" --noconfirm 2>&1 | grep -q "is up to date"; then
+        if $SUDO pacman -S "$package" --noconfirm 2>&1 | grep -q "is up to date"; then
             print_success "$package already installed"
             log "Package $package already installed"
-        elif sudo pacman -S "$package" --noconfirm; then
+        elif $SUDO pacman -S "$package" --noconfirm; then
             print_success "$package installed successfully"
             log "Package $package installed successfully"
             ((count++))
@@ -183,7 +175,7 @@ install_packages() {
 
 install_packages_single() {
     local package="$1"
-    if sudo pacman -S "$package" --noconfirm; then
+    if $SUDO pacman -S "$package" --noconfirm; then
         print_success "$package installed successfully"
         log "Package $package installed (retry successful)"
     else
@@ -213,10 +205,10 @@ install_aur_packages() {
         print_info "Installing (AUR): $package"
         
         # Try to install as pacman package first, if fails, skip
-        if sudo pacman -S "$package" --noconfirm 2>&1 | grep -q "is up to date"; then
+        if $SUDO pacman -S "$package" --noconfirm 2>&1 | grep -q "is up to date"; then
             print_success "$package already installed"
             log "AUR package $package already installed"
-        elif sudo pacman -S "$package" --noconfirm; then
+        elif $SUDO pacman -S "$package" --noconfirm; then
             print_success "$package installed successfully"
             log "AUR package $package installed successfully"
             ((count++))
@@ -300,21 +292,21 @@ configure_doas() {
     # Check if config already exists
     if [[ -f "$doas_config" ]]; then
         # Backup existing doas.conf
-        sudo cp "$doas_config" "$BACKUP_PATH/old-configs/etc-doas.conf"
+        $SUDO cp "$doas_config" "$BACKUP_PATH/old-configs/etc-doas.conf"
         print_success "Backed up existing doas.conf"
         log "Backed up existing doas.conf"
     fi
     
     # Check if line already exists
-    if sudo grep -q "permit nopass $USERNAME as root" "$doas_config" 2>/dev/null; then
+    if $SUDO grep -q "permit nopass $USERNAME as root" "$doas_config" 2>/dev/null; then
         print_success "doas already configured correctly"
         log "doas already configured correctly"
         return 0
     fi
     
     # Add the configuration line
-    if echo "$doas_config_line" | sudo tee -a "$doas_config" > /dev/null; then
-        sudo chmod 600 "$doas_config"
+    if echo "$doas_config_line" | $SUDO tee -a "$doas_config" > /dev/null; then
+        $SUDO chmod 600 "$doas_config"
         print_success "doas.conf configured successfully"
         log "doas.conf configured: $doas_config_line"
     else
@@ -348,7 +340,6 @@ main() {
     print_header
     check_prerequisites
     setup_backups
-    cleanup_pacman_lock
     update_system
     install_packages
     install_aur_packages
