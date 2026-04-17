@@ -1,3 +1,4 @@
+trash-put
 bat
 wget
 git

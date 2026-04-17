@@ -288,7 +288,7 @@ configure_doas() {
     fi
     
     local doas_config="/etc/doas.conf"
-    local doas_config_line="permit permit nopass $USERNAME as root"
+    local doas_config_line="permit nopass $USERNAME as root"
     
     # Check if config already exists
     if [[ -f "$doas_config" ]]; then
@@ -299,7 +299,7 @@ configure_doas() {
     fi
     
     # Check if line already exists
-    if sudo grep -q "permit permit nopass $USERNAME as root" "$doas_config" 2>/dev/null; then
+    if sudo grep -q "permit nopass $USERNAME as root" "$doas_config" 2>/dev/null; then
         print_success "doas already configured correctly"
         log "doas already configured correctly"
         return 0
