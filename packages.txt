@@ -1,7 +1,0 @@
-trash-cli
-bat
-wget
-git
-nmtui
-vim
-doas

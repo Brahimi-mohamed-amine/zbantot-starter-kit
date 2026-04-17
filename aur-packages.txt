@@ -1,3 +1,0 @@
-# AUR packages
-# (Add AUR packages here if needed - script will try pacman first)
-

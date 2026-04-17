@@ -1,0 +1,4 @@
+# Add your AUR packages below, one per line
+picom-jonaburg-git
+ttf-fira-code
+nerd-fonts-complete
