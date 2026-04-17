@@ -1,0 +1,36 @@
+everything i do when i install fresh arch-linux it has 
+  Command: its the command i do 
+  Description: what i do after the Command (configure it add edit remove etc...)
+
+---------------
+Command: sudo pacman -Syu
+Description: update.
+
+
+Command: sudo pacman -S doas
+Description: 
+  1.Add this file doas.conf in /etc/doas.conf 
+  2.Add in side it this line: permit permit nopass zbantot as root
+Note: to add the file i use touch and to add that line to file i need to be root
+
+
+Command: cp configs/bashrc/.bashrc ~/.bashrc
+Description: 
+  1.Copye dotfiles the .bashrc alias's to my os ~/.bashrc
+  2.Source the bashrc afther the new one 
+Note: 
+
+
+Command:
+Description:
+Note:
+
+Command:
+Description:
+Note:
+
+Command:
+Description:
+Note:
+---------------
+
