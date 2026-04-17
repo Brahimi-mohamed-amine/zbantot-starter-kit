@@ -70,26 +70,12 @@ ask_user() {
 check_prerequisites() {
     print_section "CHECK" "Checking prerequisites..."
     
-    # Check if running as root
-    if [[ $EUID -eq 0 ]]; then
-        print_error "Please do not run as root, use your regular user account"
-        exit 1
-    fi
-    print_success "Not running as root"
-    
     # Check internet
     if ! ping -c 1 8.8.8.8 &> /dev/null; then
         print_error "No internet connection"
         exit 1
     fi
     print_success "Internet connection OK"
-    
-    # Check sudo access
-    if ! sudo -n true 2>/dev/null; then
-        print_error "sudo access required"
-        exit 1
-    fi
-    print_success "sudo access verified"
     
     echo ""
 }
@@ -115,6 +101,21 @@ setup_backups() {
 ################################
 # System Update
 ################################
+
+cleanup_pacman_lock() {
+    print_section "CLEANUP" "Checking for pacman lock..."
+    
+    if [[ -f /var/lib/pacman/db.lck ]]; then
+        print_info "Found pacman lock, removing it..."
+        sudo rm -f /var/lib/pacman/db.lck
+        print_success "Pacman lock removed"
+        log "Removed pacman lock file"
+    else
+        print_success "No pacman lock found"
+    fi
+    
+    echo ""
+}
 
 update_system() {
     print_section "UPDATE" "Updating pacman database..."
@@ -374,6 +375,7 @@ main() {
     print_header
     check_prerequisites
     setup_backups
+    cleanup_pacman_lock
     update_system
     install_packages
     install_aur_packages
