@@ -50,7 +50,6 @@ vim aur-packages.txt
 That's it! The script will:
 - ✓ Update your system
 - ✓ Install all packages from `packages.txt`
-- ✓ Install yay (if not present)
 - ✓ Install all packages from `aur-packages.txt`
 - ✓ Deploy config files from `configs/` directory
 - ✓ Configure doas (if installed)
@@ -75,11 +74,11 @@ doas
 
 ### `aur-packages.txt`
 
-List of packages to install from AUR via `yay`. Same format as above:
+List of packages to install. The script tries pacman first, then skips if not found. Same format as above:
 
 ```
 # AUR packages
-yay
+# (Add packages here if needed)
 ```
 
 ### `configs/` Directory

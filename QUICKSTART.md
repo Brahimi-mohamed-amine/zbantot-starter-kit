@@ -47,10 +47,10 @@ ls -R configs/
 
 ## What The Script Does (In Order)
 
-1. **Checks prerequisites** - Verifies internet, sudo access, not running as root
+1. **Checks prerequisites** - Verifies internet connection
 2. **Creates backups** - Timestamped backup directory at `~/arch-setup-backups/`
-3. **Updates system** - Runs `sudo pacman -Syu`
-4. **Installs yay** - AUR helper (if not already installed)
+3. **Cleans pacman lock** - Removes lock file if it exists
+4. **Updates system** - Runs `sudo pacman -Syu`
 5. **Installs packages** - All packages from `packages.txt`
 6. **Installs AUR packages** - All packages from `aur-packages.txt`
 7. **Deploys configs** - Copies all files from `configs/` to your home directory

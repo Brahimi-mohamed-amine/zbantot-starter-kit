@@ -202,22 +202,6 @@ install_aur_packages() {
         return 1
     fi
     
-    # Check if yay is installed
-    if ! command -v yay &> /dev/null; then
-        print_info "Installing yay first..."
-        if git clone https://aur.archlinux.org/yay.git /tmp/yay && cd /tmp/yay && makepkg -si --noconfirm; then
-            print_success "yay installed successfully"
-            log "yay installed successfully"
-        else
-            print_error "Failed to install yay"
-            log "Failed to install yay"
-            exit 1
-        fi
-    else
-        print_success "yay already installed"
-        log "yay already installed"
-    fi
-    
     local count=0
     while IFS= read -r package || [[ -n "$package" ]]; do
         # Skip empty lines, comments, and yay
@@ -228,40 +212,22 @@ install_aur_packages() {
         
         print_info "Installing (AUR): $package"
         
-        if yay -S "$package" --noconfirm 2>&1 | grep -q "is up to date"; then
+        # Try to install as pacman package first, if fails, skip
+        if sudo pacman -S "$package" --noconfirm 2>&1 | grep -q "is up to date"; then
             print_success "$package already installed"
             log "AUR package $package already installed"
-        elif yay -S "$package" --noconfirm; then
+        elif sudo pacman -S "$package" --noconfirm; then
             print_success "$package installed successfully"
             log "AUR package $package installed successfully"
             ((count++))
         else
-            print_error "Failed to install $package"
-            log "Failed to install AUR package $package"
-            
-            local choice=$(ask_user "What would you like to do?" "R(etry)/S(kip)/A(bort)")
-            case $choice in
-                [Rr]) install_aur_packages_single "$package" ;;
-                [Ss]) log "Skipped AUR package $package" ;;
-                [Aa]) log "Aborted by user"; exit 1 ;;
-                *) log "Invalid choice, skipping AUR package $package" ;;
-            esac
+            print_info "$package not available (skipping AUR installation)"
+            log "AUR package $package not available in pacman, skipping"
         fi
     done < "$aur_file"
     
-    log "Total AUR packages installed: $count"
+    log "Total AUR packages processed: $count"
     echo ""
-}
-
-install_aur_packages_single() {
-    local package="$1"
-    if yay -S "$package" --noconfirm; then
-        print_success "$package installed successfully"
-        log "AUR package $package installed (retry successful)"
-    else
-        print_error "Still failed to install $package, skipping"
-        log "Retry failed for AUR package $package"
-    fi
 }
 
 ################################
