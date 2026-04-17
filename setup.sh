@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Exit on any error
+set -e
+
 ################################
 # Arch Linux Setup Script
 # Minimal and readable for everyone
@@ -32,6 +35,24 @@ fi
 ################################
 # Helper Functions
 ################################
+
+# Wait for pacman lock to be released
+wait_for_pacman() {
+    local timeout=300  # 5 minutes max wait
+    local elapsed=0
+    
+    while fuser /var/lib/pacman/db.lck >/dev/null 2>&1; do
+        if [[ $elapsed -ge $timeout ]]; then
+            print_error "Timeout waiting for pacman lock"
+            log "Timeout waiting for pacman lock after ${timeout}s"
+            exit 1
+        fi
+        
+        print_info "Waiting for pacman lock to be released..."
+        sleep 2
+        ((elapsed+=2))
+    done
+}
 
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"
@@ -112,6 +133,8 @@ setup_backups() {
 update_system() {
     print_section "UPDATE" "Updating pacman database..."
     
+    wait_for_pacman
+    
     if $SUDO pacman -Syu --noconfirm; then
         print_success "System updated"
         log "pacman -Syu completed successfully"
@@ -138,7 +161,8 @@ install_packages() {
         return 1
     fi
     
-    local count=0
+    # Read all packages into array, filtering out comments and empty lines
+    local packages=()
     while IFS= read -r package || [[ -n "$package" ]]; do
         # Skip empty lines and comments
         [[ -z "$package" || "$package" =~ ^# ]] && continue
@@ -146,35 +170,47 @@ install_packages() {
         # Trim whitespace
         package=$(echo "$package" | xargs)
         
-        print_info "Installing: $package"
-        
-        if $SUDO pacman -S "$package" --noconfirm 2>&1 | grep -q "is up to date"; then
+        # Check if package is already installed
+        if pacman -Qi "$package" &> /dev/null; then
             print_success "$package already installed"
             log "Package $package already installed"
-        elif $SUDO pacman -S "$package" --noconfirm; then
-            print_success "$package installed successfully"
-            log "Package $package installed successfully"
-            ((count++))
         else
-            print_error "Failed to install $package"
-            log "Failed to install $package"
-            
-            local choice=$(ask_user "What would you like to do?" "R(etry)/S(kip)/A(bort)")
-            case $choice in
-                [Rr]) install_packages_single "$package" ;;
-                [Ss]) log "Skipped $package" ;;
-                [Aa]) log "Aborted by user"; exit 1 ;;
-                *) log "Invalid choice, skipping $package" ;;
-            esac
+            packages+=("$package")
         fi
     done < "$packages_file"
     
-    log "Total packages installed: $count"
+    # Install all packages in one call
+    if [[ ${#packages[@]} -gt 0 ]]; then
+        print_info "Installing ${#packages[@]} package(s) in batch..."
+        
+        wait_for_pacman
+        
+        if $SUDO pacman -S --noconfirm "${packages[@]}"; then
+            print_success "All packages installed successfully"
+            log "All ${#packages[@]} packages installed successfully"
+        else
+            print_error "Failed to install some packages"
+            log "Failed to install packages: ${packages[*]}"
+            
+            local choice=$(ask_user "What would you like to do?" "R(etry)/S(kip)/A(bort)")
+            case $choice in
+                [Rr]) install_packages "$packages_file" ;;
+                [Ss]) log "Skipped package installation" ;;
+                [Aa]) log "Aborted by user"; exit 1 ;;
+                *) log "Invalid choice, skipping packages" ;;
+            esac
+        fi
+    else
+        print_success "All packages already installed"
+        log "All packages already installed"
+    fi
+    
     echo ""
 }
 
 install_packages_single() {
     local package="$1"
+    wait_for_pacman
     if $SUDO pacman -S "$package" --noconfirm; then
         print_success "$package installed successfully"
         log "Package $package installed (retry successful)"
@@ -194,7 +230,8 @@ install_aur_packages() {
         return 1
     fi
     
-    local count=0
+    # Read all packages into array, filtering out comments and empty lines
+    local packages=()
     while IFS= read -r package || [[ -n "$package" ]]; do
         # Skip empty lines, comments, and yay
         [[ -z "$package" || "$package" =~ ^# || "$package" == "yay" ]] && continue
@@ -202,23 +239,33 @@ install_aur_packages() {
         # Trim whitespace
         package=$(echo "$package" | xargs)
         
-        print_info "Installing (AUR): $package"
-        
-        # Try to install as pacman package first, if fails, skip
-        if $SUDO pacman -S "$package" --noconfirm 2>&1 | grep -q "is up to date"; then
+        # Check if package is already installed
+        if pacman -Qi "$package" &> /dev/null; then
             print_success "$package already installed"
             log "AUR package $package already installed"
-        elif $SUDO pacman -S "$package" --noconfirm; then
-            print_success "$package installed successfully"
-            log "AUR package $package installed successfully"
-            ((count++))
         else
-            print_info "$package not available (skipping AUR installation)"
-            log "AUR package $package not available in pacman, skipping"
+            packages+=("$package")
         fi
     done < "$aur_file"
     
-    log "Total AUR packages processed: $count"
+    # Install all packages in one call
+    if [[ ${#packages[@]} -gt 0 ]]; then
+        print_info "Installing ${#packages[@]} AUR package(s) in batch..."
+        
+        wait_for_pacman
+        
+        if $SUDO pacman -S --noconfirm "${packages[@]}"; then
+            print_success "All AUR packages installed successfully"
+            log "All ${#packages[@]} AUR packages installed successfully"
+        else
+            print_info "Some AUR packages not available in pacman (this is normal)"
+            log "Some AUR packages not available in pacman, skipping"
+        fi
+    else
+        print_success "All AUR packages already installed"
+        log "All AUR packages already installed"
+    fi
+    
     echo ""
 }
 
